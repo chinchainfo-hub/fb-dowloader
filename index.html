@@ -27,53 +27,31 @@
 
     <script>
 async function obtenerVideo() {
-    const urlInput = document.getElementById('videoUrl').value.trim();
-    const status = document.getElementById('status');
-    const results = document.getElementById('results');
+    const input = document.getElementById('videoUrl').value.trim();
+    if (!input) return;
 
-    if(!urlInput) return alert("Pega un link");
-
-    status.innerText = "Analizando respuesta del servidor...";
-    results.innerHTML = "";
+    document.getElementById('status').innerText = "Consultando servidor...";
 
     try {
-        const response = await fetch(`/api/download?url=${encodeURIComponent(urlInput)}`);
+        // Llamada a tu función de Vercel
+        const response = await fetch(`/api/download?url=${encodeURIComponent(input)}`);
         const data = await response.json();
 
-        let linksencontrados = [];
-
-        // BUSCADOR AUTOMÁTICO DE ENLACES (Caso 1: Formato contents)
-        if (data.contents && data.contents[0] && data.contents[0].videos) {
-            linksencontrados = data.contents[0].videos.map(v => ({ url: v.url, label: v.label || 'Video' }));
-        } 
-        // Caso 2: Formato plano videos
-        else if (data.videos && Array.isArray(data.videos)) {
-            linksencontrados = data.videos.map(v => ({ url: v.url || v.link, label: v.quality || v.label || 'Descargar' }));
+        // Aquí va tu lógica para mostrar los botones (v.url, etc.)
+        console.log("Datos recibidos:", data);
+        
+        if (data.message) {
+            document.getElementById('status').innerText = "Error: " + data.message;
         }
-        // Caso 3: Formato links (v2)
-        else if (data.links && typeof data.links === 'object') {
-            linksencontrados = Object.entries(data.links).map(([key, val]) => ({ url: val, label: key.toUpperCase() }));
-        }
-
-        if (linksencontrados.length > 0) {
-            linksencontrados.forEach(v => {
-                if (v.url) {
-                    results.innerHTML += `<a href="${v.url}" class="dl-btn" target="_blank" rel="noopener">DESCARGAR ${v.label}</a>`;
-                }
-            });
-            status.innerText = "¡Hecho! Selecciona la calidad:";
-        } else {
-            status.innerText = "La API no devolvió enlaces. Prueba con otro Reel.";
-            console.log("Respuesta extraña de la API:", data);
-        }
-    } catch (err) {
-        status.innerText = "Error crítico al procesar.";
+    } catch (e) {
+        document.getElementById('status').innerText = "Error en la petición";
     }
 }
     </script>
 </body>
 
 </html>
+
 
 
 
