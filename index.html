@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FB Downloader - Vercel Edition</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: #1e293b; padding: 30px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h2 { color: #38bdf8; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; outline: none; }
+        button { width: 100%; padding: 12px; background: #38bdf8; color: #0f172a; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        button:disabled { opacity: 0.5; }
+        .results { margin-top: 20px; text-align: left; }
+        .dl-btn { display: block; background: #22c55e; color: white; text-align: center; padding: 12px; margin-top: 10px; text-decoration: none; border-radius: 8px; font-weight: bold; }
+        #status { margin-top: 10px; font-size: 14px; color: #94a3b8; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>FB Downloader</h2>
+        <input type="text" id="videoUrl" placeholder="Pega el link de Facebook aquí">
+        <button id="btn" onclick="obtenerVideo()">OBTENER VIDEO</button>
+        <div id="status"></div>
+        <div id="results" class="results"></div>
+    </div>
+
+    <script>
+        async function obtenerVideo() {
+            const url = document.getElementById('videoUrl').value.trim();
+            const status = document.getElementById('status');
+            const results = document.getElementById('results');
+            const btn = document.getElementById('btn');
+
+            if(!url) return;
+            btn.disabled = true;
+            status.innerText = "Procesando en el servidor...";
+            results.innerHTML = "";
+
+            try {
+                // LLAMADA A TU PROPIA API EN VERCEL
+                const response = await fetch(`/api/download?url=${encodeURIComponent(url)}`);
+                const data = await response.json();
+
+                if (data.contents && data.contents[0].videos) {
+                    data.contents[0].videos.forEach(v => {
+                        results.innerHTML += `<a href="${v.url}" class="dl-btn" target="_blank">DESCARGAR ${v.label}</a>`;
+                    });
+                    status.innerText = "¡Listo!";
+                } else {
+                    status.innerText = "No se encontraron videos.";
+                }
+            } catch (err) {
+                status.innerText = "Error en el servidor.";
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
