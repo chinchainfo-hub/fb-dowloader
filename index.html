@@ -31,7 +31,7 @@ async function obtenerVideo() {
     const status = document.getElementById('status');
     const results = document.getElementById('results');
 
-    if(!urlInput) return alert("Pega un link válido");
+    if(!urlInput) return alert("Pega un link de Facebook");
     status.innerText = "Procesando...";
     results.innerHTML = "";
 
@@ -39,37 +39,38 @@ async function obtenerVideo() {
         const response = await fetch(`/api/download?url=${encodeURIComponent(urlInput)}`);
         const data = await response.json();
 
-        // Si la API responde con éxito y trae videos
+        // Si la API de RapidAPI responde con éxito
         if (data.contents && data.contents[0] && data.contents[0].videos) {
             data.contents[0].videos.forEach(v => {
                 results.innerHTML += `<a href="${v.url}" class="dl-btn" target="_blank">DESCARGAR ${v.label}</a>`;
             });
-            status.innerText = "¡Listo!";
+            status.innerText = "¡Video listo!";
         } 
-        // Si la API de RapidAPI falla (Missing Parameters), activamos el Plan B Robusto
+        // Si RapidAPI falla (tu error actual), usamos el Formulario Directo
         else {
-            status.innerText = "Usando motor de respaldo...";
+            status.innerText = "Redirigiendo al servidor de descarga...";
             
-            // Creamos un botón que envía el formulario correctamente
+            // Creamos un formulario que se envía solo
             results.innerHTML = `
-                <div style="background:#334155; padding:15px; border-radius:10px;">
-                    <p style="font-size:14px; margin-bottom:10px;">La API principal está en mantenimiento.</p>
+                <div style="background:#1e293b; padding:20px; border-radius:15px; border:1px solid #38bdf8;">
+                    <p style="margin-bottom:15px; font-size:14px;">La API principal está saturada. Haz clic abajo para descargar directamente:</p>
                     <form action="https://fdown.net/download.php" method="post" target="_blank">
                         <input type="hidden" name="URLZ" value="${urlInput}">
-                        <button type="submit" class="dl-btn" style="width:100%; border:none;">
-                            GENERAR DESCARGA AHORA
+                        <button type="submit" class="dl-btn" style="width:100%; border:none; cursor:pointer; background:#22c55e;">
+                            OBTENER ENLACES DE DESCARGA
                         </button>
                     </form>
                 </div>`;
         }
     } catch (err) {
-        status.innerText = "Error de conexión.";
+        status.innerText = "Error en el servidor. Intenta de nuevo.";
     }
 }
     </script>
 </body>
 
 </html>
+
 
 
 
