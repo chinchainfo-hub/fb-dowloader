@@ -27,30 +27,46 @@
 
     <script>
 async function obtenerVideo() {
-    const input = document.getElementById('videoUrl').value.trim();
-    if (!input) return;
+    const urlInput = document.getElementById('videoUrl').value.trim();
+    const status = document.getElementById('status');
+    const results = document.getElementById('results');
 
-    document.getElementById('status').innerText = "Consultando servidor...";
+    if(!urlInput) return alert("Pega un link");
+    status.innerText = "Procesando...";
+    results.innerHTML = "";
 
     try {
-        // Llamada a tu función de Vercel
-        const response = await fetch(`/api/download?url=${encodeURIComponent(input)}`);
+        const response = await fetch(`/api/download?url=${encodeURIComponent(urlInput)}`);
         const data = await response.json();
 
-        // Aquí va tu lógica para mostrar los botones (v.url, etc.)
-        console.log("Datos recibidos:", data);
-        
-        if (data.message) {
-            document.getElementById('status').innerText = "Error: " + data.message;
+        // Si la API de RapidAPI responde con error, usamos el Plan B automático
+        if (data.message === "Missing required parameters" || !data.contents) {
+            status.innerText = "La API principal falló. Generando enlace alternativo...";
+            
+            // Este es un motor que no falla en Vercel
+            const fallbackUrl = `https://fdown.net/download.php?url=${encodeURIComponent(urlInput)}`;
+            results.innerHTML = `
+                <div style="background:#334155; padding:15px; border-radius:10px; margin-top:10px;">
+                    <p style="font-size:14px; margin-bottom:10px;">Usa nuestro motor secundario:</p>
+                    <a href="${fallbackUrl}" target="_blank" class="dl-btn">DESCARGAR VIDEO (EXTERNO)</a>
+                </div>`;
+        } else {
+            // Si la API de RapidAPI funcionó, mostramos sus botones
+            const videos = data.contents[0].videos;
+            videos.forEach(v => {
+                results.innerHTML += `<a href="${v.url}" class="dl-btn" target="_blank">DESCARGAR ${v.label}</a>`;
+            });
+            status.innerText = "¡Listo!";
         }
-    } catch (e) {
-        document.getElementById('status').innerText = "Error en la petición";
+    } catch (err) {
+        status.innerText = "Error en el servidor de Vercel.";
     }
 }
     </script>
 </body>
 
 </html>
+
 
 
 
