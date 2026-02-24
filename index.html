@@ -31,7 +31,7 @@ async function obtenerVideo() {
     const status = document.getElementById('status');
     const results = document.getElementById('results');
 
-    if(!urlInput) return alert("Pega un link");
+    if(!urlInput) return alert("Pega un link válido");
     status.innerText = "Procesando...";
     results.innerHTML = "";
 
@@ -39,33 +39,38 @@ async function obtenerVideo() {
         const response = await fetch(`/api/download?url=${encodeURIComponent(urlInput)}`);
         const data = await response.json();
 
-        // Si la API de RapidAPI responde con error, usamos el Plan B automático
-        if (data.message === "Missing required parameters" || !data.contents) {
-            status.innerText = "La API principal falló. Generando enlace alternativo...";
-            
-            // Este es un motor que no falla en Vercel
-            const fallbackUrl = `https://fdown.net/download.php?url=${encodeURIComponent(urlInput)}`;
-            results.innerHTML = `
-                <div style="background:#334155; padding:15px; border-radius:10px; margin-top:10px;">
-                    <p style="font-size:14px; margin-bottom:10px;">Usa nuestro motor secundario:</p>
-                    <a href="${fallbackUrl}" target="_blank" class="dl-btn">DESCARGAR VIDEO (EXTERNO)</a>
-                </div>`;
-        } else {
-            // Si la API de RapidAPI funcionó, mostramos sus botones
-            const videos = data.contents[0].videos;
-            videos.forEach(v => {
+        // Si la API responde con éxito y trae videos
+        if (data.contents && data.contents[0] && data.contents[0].videos) {
+            data.contents[0].videos.forEach(v => {
                 results.innerHTML += `<a href="${v.url}" class="dl-btn" target="_blank">DESCARGAR ${v.label}</a>`;
             });
             status.innerText = "¡Listo!";
+        } 
+        // Si la API de RapidAPI falla (Missing Parameters), activamos el Plan B Robusto
+        else {
+            status.innerText = "Usando motor de respaldo...";
+            
+            // Creamos un botón que envía el formulario correctamente
+            results.innerHTML = `
+                <div style="background:#334155; padding:15px; border-radius:10px;">
+                    <p style="font-size:14px; margin-bottom:10px;">La API principal está en mantenimiento.</p>
+                    <form action="https://fdown.net/download.php" method="post" target="_blank">
+                        <input type="hidden" name="URLZ" value="${urlInput}">
+                        <button type="submit" class="dl-btn" style="width:100%; border:none;">
+                            GENERAR DESCARGA AHORA
+                        </button>
+                    </form>
+                </div>`;
         }
     } catch (err) {
-        status.innerText = "Error en el servidor de Vercel.";
+        status.innerText = "Error de conexión.";
     }
 }
     </script>
 </body>
 
 </html>
+
 
 
 
