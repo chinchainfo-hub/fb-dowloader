@@ -26,38 +26,41 @@
     </div>
 
     <script>
-        async function obtenerVideo() {
-            const url = document.getElementById('videoUrl').value.trim();
-            const status = document.getElementById('status');
-            const results = document.getElementById('results');
-            const btn = document.getElementById('btn');
+      async function obtenerVideo() {
+    const url = document.getElementById('videoUrl').value.trim();
+    const status = document.getElementById('status');
+    const results = document.getElementById('results');
 
-            if(!url) return;
-            btn.disabled = true;
-            status.innerText = "Procesando en el servidor...";
-            results.innerHTML = "";
+    if(!url) return;
+    status.innerText = "Buscando formatos...";
+    results.innerHTML = "";
 
-            try {
-                // LLAMADA A TU PROPIA API EN VERCEL
-                // Debe llamar a tu propia API en Vercel, no a RapidAPI directamente
-                const response = await fetch(`/api/download?url=${encodeURIComponent(url)}`);
-                const data = await response.json();
+    try {
+        const response = await fetch(`/api/download?url=${encodeURIComponent(url)}`);
+        const data = await response.json();
 
-                if (data.contents && data.contents[0].videos) {
-                    data.contents[0].videos.forEach(v => {
-                        results.innerHTML += `<a href="${v.url}" class="dl-btn" target="_blank">DESCARGAR ${v.label}</a>`;
-                    });
-                    status.innerText = "¡Listo!";
-                } else {
-                    status.innerText = "No se encontraron videos.";
-                }
-            } catch (err) {
-                status.innerText = "Error en el servidor.";
-            } finally {
-                btn.disabled = false;
-            }
+        // Intentamos encontrar los videos en diferentes lugares del JSON
+        let videos = null;
+        if (data.contents && data.contents[0] && data.contents[0].videos) {
+            videos = data.contents[0].videos;
+        } else if (data.videos) {
+            videos = data.videos;
         }
+
+        if (videos && videos.length > 0) {
+            videos.forEach(v => {
+                results.innerHTML += `<a href="${v.url}" class="dl-btn" target="_blank" rel="noopener">DESCARGAR ${v.label || 'MP4'}</a>`;
+            });
+            status.innerText = "¡Videos encontrados!";
+        } else {
+            status.innerText = "No se encontraron videos. Verifica que el video sea PÚBLICO.";
+        }
+    } catch (err) {
+        status.innerText = "Error al procesar el enlace.";
+    }
+}
     </script>
 </body>
 
 </html>
+
