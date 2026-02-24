@@ -3,191 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FB Downloader - Pro</title>
+    <title>FB Downloader - Fixed</title>
     <style>
-        :root {
-            --primary: #38bdf8;
-            --secondary: #1e293b;
-            --bg: #0f172a;
-            --success: #22c55e;
-            --text: #ffffff;
-        }
-
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            background-color: var(--secondary);
-            padding: 30px;
-            border-radius: 24px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-            width: 100%;
-            max-width: 450px;
-            text-align: center;
-            border: 1px solid #334155;
-        }
-
-        h1 {
-            color: var(--primary);
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-
-        .subtitle {
-            color: #94a3b8;
-            font-size: 14px;
-            margin-bottom: 25px;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 16px;
-            border-radius: 12px;
-            border: 2px solid #334155;
-            background: #0f172a;
-            color: white;
-            font-size: 16px;
-            box-sizing: border-box;
-            outline: none;
-            margin-bottom: 15px;
-        }
-
-        input[type="text"]:focus {
-            border-color: var(--primary);
-        }
-
-        button {
-            width: 100%;
-            padding: 16px;
-            background-color: var(--primary);
-            color: #000;
-            border: none;
-            border-radius: 12px;
-            font-weight: 800;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        button:hover { opacity: 0.9; transform: translateY(-1px); }
-        button:disabled { background-color: #475569; cursor: not-allowed; }
-
+        :root { --primary: #38bdf8; --bg: #0f172a; --card: #1e293b; --success: #22c55e; }
+        body { font-family: system-ui, sans-serif; background: var(--bg); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .container { background: var(--card); padding: 30px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; border: 1px solid #334155; }
+        input { width: 100%; padding: 15px; border-radius: 10px; border: 2px solid #334155; background: #0f172a; color: white; margin-bottom: 15px; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background: var(--primary); color: #000; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
         #status { margin-top: 20px; font-size: 14px; color: var(--primary); }
-
-        /* Estilos para el Thumbnail y Resultados */
-        .results-area { margin-top: 25px; }
-
-        .thumbnail {
-            width: 100%;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            border: 1px solid #38bdf8;
-            display: none; /* Se oculta hasta que haya imagen */
-        }
-
-        .dl-btn {
-            display: block;
-            background-color: var(--success);
-            color: white;
-            text-decoration: none;
-            text-align: center;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 10px;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .dl-btn:nth-child(even) {
-            background-color: #3b82f6; /* Color diferente para el segundo link */
-        }
-
-        .footer { margin-top: 25px; font-size: 11px; color: #475569; }
+        .thumbnail { width: 100%; border-radius: 10px; margin: 20px 0; display: none; border: 1px solid var(--primary); }
+        .dl-btn { display: block; background: var(--success); color: white; text-decoration: none; padding: 15px; border-radius: 10px; margin-top: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="container">
         <h1>FB Downloader</h1>
-        <p class="subtitle">Pega el link del video o Reel</p>
-
-        <input type="text" id="videoUrl" placeholder="https://www.facebook.com/...">
-        <button id="mainBtn" onclick="obtenerVideo()">OBTENER VIDEO</button>
-
+        <input type="text" id="videoUrl" placeholder="Pega el link aquí...">
+        <button onclick="obtenerVideo()">OBTENER VIDEO</button>
+        
         <div id="status"></div>
-
-        <div id="results" class="results-area">
-            <img id="thumb" class="thumbnail" src="" alt="Thumbnail">
-            <div id="linksContainer"></div>
-        </div>
-
-        <div class="footer">Powered by Vercel & RapidAPI</div>
+        <img id="thumb" class="thumbnail">
+        <div id="results"></div>
     </div>
 
     <script>
         async function obtenerVideo() {
-            const input = document.getElementById('videoUrl');
+            const url = document.getElementById('videoUrl').value.trim();
             const status = document.getElementById('status');
             const thumb = document.getElementById('thumb');
-            const linksContainer = document.getElementById('linksContainer');
-            const btn = document.getElementById('mainBtn');
+            const results = document.getElementById('results');
 
-            if (!input.value.trim()) return alert("Pega una URL");
+            if(!url) return alert("Pega una URL");
 
-            // Limpiar previa búsqueda
-            status.innerText = "Buscando video...";
-            status.style.color = "#38bdf8";
+            status.innerText = "Procesando respuesta...";
+            results.innerHTML = "";
             thumb.style.display = "none";
-            linksContainer.innerHTML = "";
-            btn.disabled = true;
 
             try {
-                const response = await fetch(`/api/download?url=${encodeURIComponent(input.value.trim())}`);
+                const response = await fetch(`/api/download?url=${encodeURIComponent(url)}`);
                 const data = await response.json();
 
-                // Analizamos el Array que recibimos según tu consola
-                if (Array.isArray(data) && data.length > 0) {
-                    const videoInfo = data[0];
+                // LOGICA DE ESCANEO PARA EL FORMATO QUE VISTE EN CONSOLA
+                let videoData = Array.isArray(data) ? data[0] : data;
 
-                    // 1. Mostrar Thumbnail
-                    if (videoInfo.pictureUrl) {
-                        thumb.src = videoInfo.pictureUrl;
+                if (videoData && videoData.urls) {
+                    // Mostrar imagen si existe
+                    if (videoData.pictureUrl) {
+                        thumb.src = videoData.pictureUrl;
                         thumb.style.display = "block";
                     }
 
-                    // 2. Mostrar Botones de descarga
-                    if (videoInfo.urls && videoInfo.urls.length > 0) {
-                        status.innerText = "¡Video listo!";
-                        videoInfo.urls.forEach(v => {
-                            const cal = v.subname ? v.subname.toUpperCase() : "DESCARGAR";
-                            linksContainer.innerHTML += `
-                                <a href="${v.url}" class="dl-btn" target="_blank" rel="noopener">
-                                    DESCARGAR ${cal}
-                                </a>`;
-                        });
-                    } else {
-                        status.innerText = "No se encontraron links de descarga.";
-                    }
+                    // Generar botones para cada URL encontrada
+                    videoData.urls.forEach((item, index) => {
+                        const calidad = item.subname ? item.subname.toUpperCase() : `Opción ${index + 1}`;
+                        const linkHtml = `<a href="${item.url}" class="dl-btn" target="_blank">DESCARGAR ${calidad}</a>`;
+                        results.innerHTML += linkHtml;
+                    });
 
+                    status.innerText = "¡Video encontrado!";
                 } else {
-                    status.innerText = "La API no encontró el video. Verifica que sea público.";
-                    status.style.color = "#ef4444";
+                    status.innerText = "No se encontraron links. Revisa la consola (F12).";
+                    console.log("Datos recibidos pero no procesados:", data);
                 }
-
             } catch (err) {
                 status.innerText = "Error de conexión.";
-                status.style.color = "#ef4444";
-            } finally {
-                btn.disabled = false;
+                console.error(err);
             }
         }
     </script>
