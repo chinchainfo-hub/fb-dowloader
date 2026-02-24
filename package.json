@@ -1,5 +1,11 @@
-{
+"name": "fb-downloader",
+  "version": "1.0.0",
+  "description": "Facebook Video Downloader using Vercel Functions",
+  "main": "api/download.js",
   "dependencies": {
-    "node-fetch": "^3.0.0"
+    "node-fetch": "^3.3.0"
+  },
+  "engines": {
+    "node": "18.x"
   }
 }
