@@ -3,78 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FB Downloader - Vercel Edition</title>
+    <title>FB Video Downloader Pro</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .card { background: #1e293b; padding: 30px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        h2 { color: #38bdf8; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; outline: none; }
-        button { width: 100%; padding: 12px; background: #38bdf8; color: #0f172a; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
-        button:disabled { opacity: 0.5; }
-        .results { margin-top: 20px; text-align: left; }
-        .dl-btn { display: block; background: #22c55e; color: white; text-align: center; padding: 12px; margin-top: 10px; text-decoration: none; border-radius: 8px; font-weight: bold; }
-        #status { margin-top: 10px; font-size: 14px; color: #94a3b8; }
+        :root {
+            --primary: #38bdf8;
+            --secondary: #1e293b;
+            --bg: #0f172a;
+            --success: #22c55e;
+            --text: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: var(--secondary);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid #334155;
+            background: #0f172a;
+            color: white;
+            font-size: 16px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary);
+            color: var(--bg);
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background-color: #64748b;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #status {
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--primary);
+            min-height: 20px;
+        }
+
+        .results-area {
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .dl-btn {
+            display: block;
+            background-color: var(--success);
+            color: white;
+            text-decoration: none;
+            text-align: center;
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .dl-btn:hover {
+            background-color: #16a34a;
+        }
+
+        .footer {
+            margin-top: 25px;
+            font-size: 11px;
+            color: #475569;
+        }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>FB Downloader</h2>
-        <input type="text" id="videoUrl" placeholder="Pega el link de Facebook aquí">
-        <button id="btn" onclick="obtenerVideo()">OBTENER VIDEO</button>
+
+    <div class="container">
+        <h1>FB Downloader</h1>
+        <p>Descarga videos y Reels de Facebook en HD</p>
+
+        <div class="input-group">
+            <input type="text" id="videoUrl" placeholder="Pega el enlace aquí (ej. fb.watch/...)">
+        </div>
+
+        <button id="mainBtn" onclick="obtenerVideo()">OBTENER ENLACES</button>
+
         <div id="status"></div>
-        <div id="results" class="results"></div>
+
+        <div id="results" class="results-area">
+            </div>
+
+        <div class="footer">
+            Procesado de forma segura mediante Vercel Serverless
+        </div>
     </div>
 
     <script>
-async function obtenerVideo() {
-    const urlInput = document.getElementById('videoUrl').value.trim();
-    const status = document.getElementById('status');
-    const results = document.getElementById('results');
+        async function obtenerVideo() {
+            const input = document.getElementById('videoUrl');
+            const urlValue = input.value.trim();
+            const status = document.getElementById('status');
+            const results = document.getElementById('results');
+            const btn = document.getElementById('mainBtn');
 
-    if(!urlInput) return alert("Pega un link de Facebook");
-    status.innerText = "Procesando...";
-    results.innerHTML = "";
+            if (!urlValue) {
+                status.style.color = "#ef4444";
+                status.innerText = "Por favor, pega una URL válida.";
+                return;
+            }
 
-    try {
-        const response = await fetch(`/api/download?url=${encodeURIComponent(urlInput)}`);
-        const data = await response.json();
+            // Reset de interfaz
+            status.style.color = "#38bdf8";
+            status.innerText = "Conectando con el servidor...";
+            results.innerHTML = "";
+            btn.disabled = true;
 
-        // Si la API de RapidAPI responde con éxito
-        if (data.contents && data.contents[0] && data.contents[0].videos) {
-            data.contents[0].videos.forEach(v => {
-                results.innerHTML += `<a href="${v.url}" class="dl-btn" target="_blank">DESCARGAR ${v.label}</a>`;
-            });
-            status.innerText = "¡Video listo!";
-        } 
-        // Si RapidAPI falla (tu error actual), usamos el Formulario Directo
-        else {
-            status.innerText = "Redirigiendo al servidor de descarga...";
-            
-            // Creamos un formulario que se envía solo
-            results.innerHTML = `
-                <div style="background:#1e293b; padding:20px; border-radius:15px; border:1px solid #38bdf8;">
-                    <p style="margin-bottom:15px; font-size:14px;">La API principal está saturada. Haz clic abajo para descargar directamente:</p>
-                    <form action="https://fdown.net/download.php" method="post" target="_blank">
-                        <input type="hidden" name="URLZ" value="${urlInput}">
-                        <button type="submit" class="dl-btn" style="width:100%; border:none; cursor:pointer; background:#22c55e;">
-                            OBTENER ENLACES DE DESCARGA
-                        </button>
-                    </form>
-                </div>`;
+            try {
+                // Llamada a tu API en Vercel
+                const response = await fetch(`/api/download?url=${encodeURIComponent(urlValue)}`);
+                const data = await response.json();
+
+                // Caso ÉXITO: La API devuelve links
+                if (data && data.links) {
+                    status.innerText = "¡Video localizado!";
+                    let html = "";
+                    
+                    // Iteramos sobre los links (HD, SD, etc.)
+                    for (const [key, value] of Object.entries(data.links)) {
+                        html += `
+                            <a href="${value}" class="dl-btn" target="_blank" rel="noopener noreferrer">
+                                DESCARGAR CALIDAD: ${key.toUpperCase()}
+                            </a>`;
+                    }
+                    results.innerHTML = html;
+                } 
+                // Caso ERROR de Parámetros o API
+                else if (data.message || data.error) {
+                    status.style.color = "#ef4444";
+                    status.innerText = "Error: " + (data.message || "No se encontraron videos.");
+                    console.error("Detalle API:", data);
+                }
+                else {
+                    status.innerText = "No se obtuvieron resultados. Prueba con otro link.";
+                }
+
+            } catch (error) {
+                status.style.color = "#ef4444";
+                status.innerText = "Error de conexión con el servidor.";
+                console.error("Error Fetch:", error);
+            } finally {
+                btn.disabled = false;
+            }
         }
-    } catch (err) {
-        status.innerText = "Error en el servidor. Intenta de nuevo.";
-    }
-}
+
+        // Permitir usar "Enter" para buscar
+        document.getElementById('videoUrl').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                obtenerVideo();
+            }
+        });
     </script>
 </body>
-
 </html>
-
-
-
-
-
-
-
-
