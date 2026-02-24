@@ -3,24 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FB Downloader - Fixed</title>
+    <title>FB Downloader - Final Fix</title>
     <style>
         :root { --primary: #38bdf8; --bg: #0f172a; --card: #1e293b; --success: #22c55e; }
-        body { font-family: system-ui, sans-serif; background: var(--bg); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-        .container { background: var(--card); padding: 30px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; border: 1px solid #334155; }
-        input { width: 100%; padding: 15px; border-radius: 10px; border: 2px solid #334155; background: #0f172a; color: white; margin-bottom: 15px; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; background: var(--primary); color: #000; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
-        #status { margin-top: 20px; font-size: 14px; color: var(--primary); }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .container { background: var(--card); padding: 30px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        input { width: 100%; padding: 15px; border-radius: 10px; border: 2px solid #334155; background: #0f172a; color: white; margin-bottom: 15px; box-sizing: border-box; outline: none; }
+        input:focus { border-color: var(--primary); }
+        button { width: 100%; padding: 15px; background: var(--primary); color: #000; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { opacity: 0.8; }
+        #status { margin-top: 20px; font-size: 14px; color: var(--primary); font-weight: bold; }
         .thumbnail { width: 100%; border-radius: 10px; margin: 20px 0; display: none; border: 1px solid var(--primary); }
-        .dl-btn { display: block; background: var(--success); color: white; text-decoration: none; padding: 15px; border-radius: 10px; margin-top: 10px; font-weight: bold; }
+        .dl-btn { display: block; background: var(--success); color: white; text-decoration: none; padding: 15px; border-radius: 10px; margin-top: 10px; font-weight: bold; font-size: 14px; transition: 0.3s; }
+        .dl-btn:hover { filter: brightness(1.1); }
     </style>
 </head>
 <body>
 
     <div class="container">
         <h1>FB Downloader</h1>
-        <input type="text" id="videoUrl" placeholder="Pega el link aquí...">
-        <button onclick="obtenerVideo()">OBTENER VIDEO</button>
+        <input type="text" id="videoUrl" placeholder="Pega el enlace de Facebook aquí...">
+        <button onclick="obtenerVideo()">GENERAR DESCARGA</button>
         
         <div id="status"></div>
         <img id="thumb" class="thumbnail">
@@ -29,46 +32,51 @@
 
     <script>
         async function obtenerVideo() {
-            const url = document.getElementById('videoUrl').value.trim();
+            const urlInput = document.getElementById('videoUrl').value.trim();
             const status = document.getElementById('status');
             const thumb = document.getElementById('thumb');
             const results = document.getElementById('results');
 
-            if(!url) return alert("Pega una URL");
+            if(!urlInput) return alert("Por favor, pega una URL");
 
-            status.innerText = "Procesando respuesta...";
+            status.innerText = "Analizando datos de la API...";
             results.innerHTML = "";
             thumb.style.display = "none";
 
             try {
-                const response = await fetch(`/api/download?url=${encodeURIComponent(url)}`);
+                const response = await fetch(`/api/download?url=${encodeURIComponent(urlInput)}`);
                 const data = await response.json();
 
-                // LOGICA DE ESCANEO PARA EL FORMATO QUE VISTE EN CONSOLA
-                let videoData = Array.isArray(data) ? data[0] : data;
+                // 1. EXTRAER EL OBJETO (Manejamos si viene en Array o Directo)
+                const videoData = Array.isArray(data) ? data[0] : data;
 
-                if (videoData && videoData.urls) {
-                    // Mostrar imagen si existe
+                if (videoData) {
+                    // 2. MOSTRAR IMAGEN (pictureUrl)
                     if (videoData.pictureUrl) {
                         thumb.src = videoData.pictureUrl;
                         thumb.style.display = "block";
                     }
 
-                    // Generar botones para cada URL encontrada
-                    videoData.urls.forEach((item, index) => {
-                        const calidad = item.subname ? item.subname.toUpperCase() : `Opción ${index + 1}`;
-                        const linkHtml = `<a href="${item.url}" class="dl-btn" target="_blank">DESCARGAR ${calidad}</a>`;
-                        results.innerHTML += linkHtml;
-                    });
-
-                    status.innerText = "¡Video encontrado!";
+                    // 3. BUSCAR ENLACES (urls)
+                    // Esta es la parte crítica: revisamos la lista 'urls' que viste en consola
+                    if (videoData.urls && Array.isArray(videoData.urls)) {
+                        videoData.urls.forEach((item) => {
+                            const calidad = item.subname ? item.subname.toUpperCase() : "DESCARGAR VIDEO";
+                            results.innerHTML += `<a href="${item.url}" class="dl-btn" target="_blank" rel="noopener">📥 ${calidad}</a>`;
+                        });
+                        status.innerText = "¡Video encontrado!";
+                    } else {
+                        status.innerText = "Error: No se encontraron links en la respuesta.";
+                    }
                 } else {
-                    status.innerText = "No se encontraron links. Revisa la consola (F12).";
-                    console.log("Datos recibidos pero no procesados:", data);
+                    status.innerText = "La API no devolvió información válida.";
                 }
+                
+                console.log("Datos finales procesados:", videoData);
+
             } catch (err) {
-                status.innerText = "Error de conexión.";
-                console.error(err);
+                status.innerText = "Error de conexión con el servidor.";
+                console.error("Detalle del error:", err);
             }
         }
     </script>
