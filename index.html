@@ -39,6 +39,7 @@
 
             try {
                 // LLAMADA A TU PROPIA API EN VERCEL
+                // Debe llamar a tu propia API en Vercel, no a RapidAPI directamente
                 const response = await fetch(`/api/download?url=${encodeURIComponent(url)}`);
                 const data = await response.json();
 
@@ -58,4 +59,5 @@
         }
     </script>
 </body>
+
 </html>
