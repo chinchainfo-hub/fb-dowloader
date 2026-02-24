@@ -26,41 +26,31 @@
     </div>
 
     <script>
-      async function obtenerVideo() {
-    const url = document.getElementById('videoUrl').value.trim();
-    const status = document.getElementById('status');
-    const results = document.getElementById('results');
+export default async function handler(req, res) {
+    const { url } = req.query;
+    if (!url) return res.status(400).json({ error: 'URL requerida' });
 
-    if(!url) return;
-    status.innerText = "Buscando formatos...";
-    results.innerHTML = "";
+    const apiKey = '6d670f29d2msh5ec78c92dc17ff4p1a2332jsn07491138181e';
+    const apiHost = 'social-media-video-downloader.p.rapidapi.com';
 
     try {
-        const response = await fetch(`/api/download?url=${encodeURIComponent(url)}`);
+        const response = await fetch(`https://${apiHost}/youtube/v3/video/details?url=${encodeURIComponent(url)}`, {
+            headers: {
+                'x-rapidapi-key': apiKey,
+                'x-rapidapi-host': apiHost
+            }
+        });
+
         const data = await response.json();
-
-        // Intentamos encontrar los videos en diferentes lugares del JSON
-        let videos = null;
-        if (data.contents && data.contents[0] && data.contents[0].videos) {
-            videos = data.contents[0].videos;
-        } else if (data.videos) {
-            videos = data.videos;
-        }
-
-        if (videos && videos.length > 0) {
-            videos.forEach(v => {
-                results.innerHTML += `<a href="${v.url}" class="dl-btn" target="_blank" rel="noopener">DESCARGAR ${v.label || 'MP4'}</a>`;
-            });
-            status.innerText = "¡Videos encontrados!";
-        } else {
-            status.innerText = "No se encontraron videos. Verifica que el video sea PÚBLICO.";
-        }
-    } catch (err) {
-        status.innerText = "Error al procesar el enlace.";
+        // Esto enviará TODO lo que diga la API a tu navegador para analizarlo
+        res.status(200).json(data);
+    } catch (error) {
+        res.status(500).json({ error: 'Error en la conexión con la API' });
     }
 }
     </script>
 </body>
 
 </html>
+
 
