@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FB Downloader Pro</title>
+    <title>FB Downloader - Pro</title>
     <style>
         :root {
             --primary: #38bdf8;
@@ -27,7 +27,7 @@
 
         .container {
             background-color: var(--secondary);
-            padding: 40px;
+            padding: 30px;
             border-radius: 24px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
             width: 100%;
@@ -38,15 +38,14 @@
 
         h1 {
             color: var(--primary);
-            font-size: 26px;
-            margin-bottom: 10px;
-            letter-spacing: -1px;
+            font-size: 24px;
+            margin-bottom: 5px;
         }
 
-        p.subtitle {
+        .subtitle {
             color: #94a3b8;
             font-size: 14px;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
 
         input[type="text"] {
@@ -59,13 +58,11 @@
             font-size: 16px;
             box-sizing: border-box;
             outline: none;
-            transition: all 0.3s;
             margin-bottom: 15px;
         }
 
         input[type="text"]:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
         }
 
         button {
@@ -79,39 +76,22 @@
             font-size: 16px;
             cursor: pointer;
             transition: all 0.2s;
-            text-transform: uppercase;
         }
 
-        button:hover {
-            opacity: 0.9;
-            transform: translateY(-2px);
-        }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        button:disabled { background-color: #475569; cursor: not-allowed; }
 
-        button:disabled {
-            background-color: #475569;
-            cursor: not-allowed;
-            transform: none;
-        }
+        #status { margin-top: 20px; font-size: 14px; color: var(--primary); }
 
-        #status {
-            margin-top: 20px;
-            font-size: 14px;
-            min-height: 20px;
-            color: var(--primary);
-        }
+        /* Estilos para el Thumbnail y Resultados */
+        .results-area { margin-top: 25px; }
 
-        .results-area {
-            margin-top: 25px;
-        }
-
-        .video-title {
-            font-size: 13px;
-            color: #94a3b8;
+        .thumbnail {
+            width: 100%;
+            border-radius: 12px;
             margin-bottom: 15px;
-            display: block;
-            background: #0f172a;
-            padding: 10px;
-            border-radius: 8px;
+            border: 1px solid #38bdf8;
+            display: none; /* Se oculta hasta que haya imagen */
         }
 
         .dl-btn {
@@ -124,99 +104,92 @@
             border-radius: 12px;
             margin-bottom: 10px;
             font-weight: bold;
-            transition: background 0.3s;
+            font-size: 14px;
         }
 
-        .dl-btn.sd {
-            background-color: #64748b;
+        .dl-btn:nth-child(even) {
+            background-color: #3b82f6; /* Color diferente para el segundo link */
         }
 
-        .footer {
-            margin-top: 30px;
-            font-size: 11px;
-            color: #475569;
-        }
+        .footer { margin-top: 25px; font-size: 11px; color: #475569; }
     </style>
 </head>
 <body>
 
     <div class="container">
         <h1>FB Downloader</h1>
-        <p class="subtitle">Descarga videos de Facebook en HD/SD</p>
+        <p class="subtitle">Pega el link del video o Reel</p>
 
-        <input type="text" id="videoUrl" placeholder="Pega el link de Facebook aquí...">
-        <button id="mainBtn" onclick="obtenerVideo()">Descargar ahora</button>
+        <input type="text" id="videoUrl" placeholder="https://www.facebook.com/...">
+        <button id="mainBtn" onclick="obtenerVideo()">OBTENER VIDEO</button>
 
         <div id="status"></div>
-        <div id="results" class="results-area"></div>
 
-        <div class="footer">
-            Powered by Vercel & Facebook17 API
+        <div id="results" class="results-area">
+            <img id="thumb" class="thumbnail" src="" alt="Thumbnail">
+            <div id="linksContainer"></div>
         </div>
+
+        <div class="footer">Powered by Vercel & RapidAPI</div>
     </div>
 
     <script>
         async function obtenerVideo() {
             const input = document.getElementById('videoUrl');
-            const urlValue = input.value.trim();
             const status = document.getElementById('status');
-            const results = document.getElementById('results');
+            const thumb = document.getElementById('thumb');
+            const linksContainer = document.getElementById('linksContainer');
             const btn = document.getElementById('mainBtn');
 
-            if (!urlValue) {
-                status.innerText = "Error: Pega un enlace primero.";
-                status.style.color = "#ef4444";
-                return;
-            }
+            if (!input.value.trim()) return alert("Pega una URL");
 
-            // Preparar UI
-            status.innerText = "Consultando con la API...";
+            // Limpiar previa búsqueda
+            status.innerText = "Buscando video...";
             status.style.color = "#38bdf8";
-            results.innerHTML = "";
+            thumb.style.display = "none";
+            linksContainer.innerHTML = "";
             btn.disabled = true;
 
             try {
-                // Llamada a tu servidor en Vercel
-                const response = await fetch(`/api/download?url=${encodeURIComponent(urlValue)}`);
+                const response = await fetch(`/api/download?url=${encodeURIComponent(input.value.trim())}`);
                 const data = await response.json();
 
-                // Analizar la respuesta según el formato de facebook17
-                if (data && (data.hd || data.sd)) {
-                    status.innerText = "¡Video listo para descargar!";
-                    let html = "";
-                    
-                    if (data.title) {
-                        html += `<span class="video-title">🎥 ${data.title}</span>`;
+                // Analizamos el Array que recibimos según tu consola
+                if (Array.isArray(data) && data.length > 0) {
+                    const videoInfo = data[0];
+
+                    // 1. Mostrar Thumbnail
+                    if (videoInfo.pictureUrl) {
+                        thumb.src = videoInfo.pictureUrl;
+                        thumb.style.display = "block";
                     }
-                    
-                    if (data.hd) {
-                        html += `<a href="${data.hd}" class="dl-btn" target="_blank">DESCARGAR CALIDAD HD</a>`;
+
+                    // 2. Mostrar Botones de descarga
+                    if (videoInfo.urls && videoInfo.urls.length > 0) {
+                        status.innerText = "¡Video listo!";
+                        videoInfo.urls.forEach(v => {
+                            const cal = v.subname ? v.subname.toUpperCase() : "DESCARGAR";
+                            linksContainer.innerHTML += `
+                                <a href="${v.url}" class="dl-btn" target="_blank" rel="noopener">
+                                    DESCARGAR ${cal}
+                                </a>`;
+                        });
+                    } else {
+                        status.innerText = "No se encontraron links de descarga.";
                     }
-                    
-                    if (data.sd) {
-                        html += `<a href="${data.sd}" class="dl-btn sd" target="_blank">DESCARGAR CALIDAD SD</a>`;
-                    }
-                    
-                    results.innerHTML = html;
+
                 } else {
+                    status.innerText = "La API no encontró el video. Verifica que sea público.";
                     status.style.color = "#ef4444";
-                    status.innerText = "Error: No se encontraron enlaces (¿Es un video público?)";
-                    console.log("Respuesta de la API:", data);
                 }
 
-            } catch (error) {
+            } catch (err) {
+                status.innerText = "Error de conexión.";
                 status.style.color = "#ef4444";
-                status.innerText = "Error crítico de conexión.";
-                console.error(error);
             } finally {
                 btn.disabled = false;
             }
         }
-
-        // Ejecutar con la tecla Enter
-        document.getElementById('videoUrl').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') obtenerVideo();
-        });
     </script>
 </body>
 </html>
