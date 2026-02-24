@@ -3,11 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FB Downloader - MP3 & Video</title>
+    <title>FB Downloader - HD & SD</title>
     <style>
-        :root { --primary: #38bdf8; --bg: #0f172a; --card: #1e293b; --success: #22c55e; --mp3: #a855f7; }
+        :root { 
+            --primary: #38bdf8; 
+            --bg: #0f172a; 
+            --card: #1e293b; 
+            --hd-color: #22c55e; /* Verde para HD */
+            --sd-color: #64748b; /* Gris azulado para SD */
+        }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
         .container { background: var(--card); padding: 30px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h1 { margin-bottom: 20px; font-size: 24px; color: var(--primary); }
         input { width: 100%; padding: 15px; border-radius: 10px; border: 2px solid #334155; background: #0f172a; color: white; margin-bottom: 15px; box-sizing: border-box; outline: none; }
         input:focus { border-color: var(--primary); }
         button { width: 100%; padding: 15px; background: var(--primary); color: #000; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; }
@@ -15,19 +22,18 @@
         #status { margin-top: 20px; font-size: 14px; color: var(--primary); font-weight: bold; }
         .thumbnail { width: 100%; border-radius: 10px; margin: 20px 0; display: none; border: 1px solid var(--primary); }
         
-        .dl-btn { display: block; color: white; text-decoration: none; padding: 15px; border-radius: 10px; margin-top: 10px; font-weight: bold; font-size: 14px; transition: 0.3s; }
-        .btn-video { background: var(--success); }
-        .btn-mp3 { background: var(--mp3); }
-        .dl-btn:hover { filter: brightness(1.2); transform: scale(1.02); }
+        .dl-btn { display: block; color: white; text-decoration: none; padding: 15px; border-radius: 10px; margin-top: 10px; font-weight: bold; font-size: 14px; transition: 0.3s; text-transform: uppercase; }
+        .btn-hd { background: var(--hd-color); }
+        .btn-sd { background: var(--sd-color); }
+        .dl-btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
     </style>
 </head>
 <body>
 
     <div class="container">
         <h1>FB Downloader</h1>
-        <p style="font-size: 12px; color: #94a3b8; margin-top: -10px;">Video, Reels y Audio MP3</p>
         <input type="text" id="videoUrl" placeholder="Pega el link de Facebook aquí...">
-        <button onclick="obtenerVideo()">OBTENER ENLACES</button>
+        <button onclick="obtenerVideo()">ANALIZAR VIDEO</button>
         
         <div id="status"></div>
         <img id="thumb" class="thumbnail">
@@ -41,9 +47,9 @@
             const thumb = document.getElementById('thumb');
             const results = document.getElementById('results');
 
-            if(!urlInput) return alert("Por favor, pega una URL");
+            if(!urlInput) return alert("Pega una URL válida");
 
-            status.innerText = "Analizando video y audio...";
+            status.innerText = "Buscando calidades disponibles...";
             results.innerHTML = "";
             thumb.style.display = "none";
 
@@ -51,42 +57,39 @@
                 const response = await fetch(`/api/download?url=${encodeURIComponent(urlInput)}`);
                 const data = await response.json();
 
+                // Extraemos el primer objeto del array
                 const videoData = Array.isArray(data) ? data[0] : data;
 
-                if (videoData) {
+                if (videoData && videoData.urls) {
+                    // Mostrar Thumbnail
                     if (videoData.pictureUrl) {
                         thumb.src = videoData.pictureUrl;
                         thumb.style.display = "block";
                     }
 
+                    // Generar botones diferenciados
                     let htmlButtons = "";
-
-                    // 1. PROCESAR VIDEOS (HD / SD)
-                    if (videoData.urls && Array.isArray(videoData.urls)) {
-                        videoData.urls.forEach((item) => {
-                            // Detectamos si es HD o SD por el nombre que viene de la API
-                            const calidad = item.subname ? item.subname.toUpperCase() : "VIDEO";
-                            htmlButtons += `<a href="${item.url}" class="dl-btn btn-video" target="_blank" rel="noopener">🎬 DESCARGAR ${calidad}</a>`;
-                        });
-
-                        // 2. GENERAR OPCIÓN MP3 
-                        // Usamos el primer link de video disponible (el SD suele ser más rápido) para el MP3
-                        // Nota: Como es descarga directa, el navegador bajará el video, pero con un conversor externo o 
-                        // simplemente bajando el archivo, el usuario ya tiene el recurso.
-                        const audioUrl = videoData.urls[videoData.urls.length - 1].url; 
-                        htmlButtons += `<a href="${audioUrl}" class="dl-btn btn-mp3" target="_blank" rel="noopener">🎵 DESCARGAR MP3 (AUDIO)</a>`;
+                    videoData.urls.forEach((item) => {
+                        const label = item.subname ? item.subname.toUpperCase() : "VIDEO";
                         
-                        results.innerHTML = htmlButtons;
-                        status.innerText = "¡Enlaces generados!";
-                    } else {
-                        status.innerText = "No se encontraron links.";
-                    }
+                        // Aplicar clase diferente si es HD o SD
+                        const claseColor = label.includes("HD") ? "btn-hd" : "btn-sd";
+                        const icono = label.includes("HD") ? "🌟" : "📽️";
+
+                        htmlButtons += `
+                            <a href="${item.url}" class="dl-btn ${claseColor}" target="_blank" rel="noopener">
+                                ${icono} DESCARGAR EN CALIDAD ${label}
+                            </a>`;
+                    });
+
+                    results.innerHTML = htmlButtons;
+                    status.innerText = "¡Video listo!";
                 } else {
-                    status.innerText = "Error en la respuesta de la API.";
+                    status.innerText = "No se encontraron enlaces de descarga.";
                 }
 
             } catch (err) {
-                status.innerText = "Error de conexión.";
+                status.innerText = "Error al conectar con la API.";
                 console.error(err);
             }
         }
