@@ -3,25 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FB Downloader - HD & SD</title>
+    <title>FB Downloader - Custom Name</title>
     <style>
         :root { 
             --primary: #38bdf8; 
             --bg: #0f172a; 
             --card: #1e293b; 
-            --hd-color: #22c55e; /* Verde para HD */
-            --sd-color: #64748b; /* Gris azulado para SD */
+            --hd-color: #22c55e; 
+            --sd-color: #64748b; 
         }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
         .container { background: var(--card); padding: 30px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         h1 { margin-bottom: 20px; font-size: 24px; color: var(--primary); }
-        input { width: 100%; padding: 15px; border-radius: 10px; border: 2px solid #334155; background: #0f172a; color: white; margin-bottom: 15px; box-sizing: border-box; outline: none; }
-        input:focus { border-color: var(--primary); }
-        button { width: 100%; padding: 15px; background: var(--primary); color: #000; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { opacity: 0.8; }
-        #status { margin-top: 20px; font-size: 14px; color: var(--primary); font-weight: bold; }
-        .thumbnail { width: 100%; border-radius: 10px; margin: 20px 0; display: none; border: 1px solid var(--primary); }
         
+        /* Estilos de inputs */
+        input { width: 100%; padding: 15px; border-radius: 10px; border: 2px solid #334155; background: #0f172a; color: white; margin-bottom: 12px; box-sizing: border-box; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--primary); }
+        
+        .label-text { font-size: 12px; color: #94a3b8; text-align: left; margin-bottom: 5px; display: block; width: 100%; margin-left: 5px; }
+
+        button { width: 100%; padding: 15px; background: var(--primary); color: #000; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 5px; }
+        button:hover { opacity: 0.8; }
+        
+        #status { margin-top: 15px; font-size: 13px; color: var(--primary); font-weight: bold; }
+        .thumbnail { width: 100%; border-radius: 10px; margin: 15px 0; display: none; border: 1px solid var(--primary); }
+        
+        /* Botones de descarga */
         .dl-btn { display: block; color: white; text-decoration: none; padding: 15px; border-radius: 10px; margin-top: 10px; font-weight: bold; font-size: 14px; transition: 0.3s; text-transform: uppercase; }
         .btn-hd { background: var(--hd-color); }
         .btn-sd { background: var(--sd-color); }
@@ -32,10 +39,19 @@
 
     <div class="container">
         <h1>FB Downloader</h1>
-        <input type="text" id="videoUrl" placeholder="Pega el link de Facebook aquí...">
+        
+        <span class="label-text">Enlace del video:</span>
+        <input type="text" id="videoUrl" placeholder="https://www.facebook.com/...">
+        
         <button onclick="obtenerVideo()">ANALIZAR VIDEO</button>
         
         <div id="status"></div>
+
+        <div id="customNameArea" style="display:none; margin-top: 20px; border-top: 1px solid #334155; pt: 10px;">
+            <span class="label-text" style="margin-top:15px;">Nombre del archivo (opcional):</span>
+            <input type="text" id="customFileName" placeholder="Ej: Mi_Video_Favorito">
+        </div>
+
         <img id="thumb" class="thumbnail">
         <div id="results"></div>
     </div>
@@ -44,52 +60,64 @@
         async function obtenerVideo() {
             const urlInput = document.getElementById('videoUrl').value.trim();
             const status = document.getElementById('status');
+            const customNameArea = document.getElementById('customNameArea');
+            const customFileNameInput = document.getElementById('customFileName');
             const thumb = document.getElementById('thumb');
             const results = document.getElementById('results');
 
             if(!urlInput) return alert("Pega una URL válida");
 
-            status.innerText = "Buscando calidades disponibles...";
+            status.innerText = "Consultando con la API...";
             results.innerHTML = "";
             thumb.style.display = "none";
+            customNameArea.style.display = "none";
 
             try {
                 const response = await fetch(`/api/download?url=${encodeURIComponent(urlInput)}`);
                 const data = await response.json();
 
-                // Extraemos el primer objeto del array
                 const videoData = Array.isArray(data) ? data[0] : data;
 
-                if (videoData && videoData.urls) {
-                    // Mostrar Thumbnail
+                if (videoData) {
+                    // 1. EXTRAER TÍTULO O DESCRIPCIÓN Y PONERLO EN LA CAJA
+                    const rawTitle = videoData.title || (videoData.meta && videoData.meta.title) || "";
+                    customFileNameInput.value = rawTitle.substring(0, 50); // Limitamos a 50 caracteres para que no sea gigante
+                    customNameArea.style.display = "block";
+
+                    // 2. MOSTRAR THUMBNAIL
                     if (videoData.pictureUrl) {
                         thumb.src = videoData.pictureUrl;
                         thumb.style.display = "block";
                     }
 
-                    // Generar botones diferenciados
-                    let htmlButtons = "";
-                    videoData.urls.forEach((item) => {
-                        const label = item.subname ? item.subname.toUpperCase() : "VIDEO";
-                        
-                        // Aplicar clase diferente si es HD o SD
-                        const claseColor = label.includes("HD") ? "btn-hd" : "btn-sd";
-                        const icono = label.includes("HD") ? "🌟" : "📽️";
-
-                        htmlButtons += `
-                            <a href="${item.url}" class="dl-btn ${claseColor}" target="_blank" rel="noopener">
-                                ${icono} DESCARGAR EN CALIDAD ${label}
-                            </a>`;
-                    });
-
-                    results.innerHTML = htmlButtons;
-                    status.innerText = "¡Video listo!";
-                } else {
-                    status.innerText = "No se encontraron enlaces de descarga.";
+                    // 3. GENERAR BOTONES
+                    if (videoData.urls && Array.isArray(videoData.urls)) {
+                        let htmlButtons = "";
+                        videoData.urls.forEach((item) => {
+                            const label = item.subname ? item.subname.toUpperCase() : "VIDEO";
+                            const claseColor = label.includes("HD") ? "btn-hd" : "btn-sd";
+                            
+                            // Usamos el nombre de la caja para el atributo download
+                            const userFileName = customFileNameInput.value.trim() || "video_fb";
+                            
+                            htmlButtons += `
+                                <a href="${item.url}" 
+                                   download="${userFileName}.mp4" 
+                                   class="dl-btn ${claseColor}" 
+                                   target="_blank" 
+                                   rel="noopener">
+                                    📥 DESCARGAR ${label}
+                                </a>`;
+                        });
+                        results.innerHTML = htmlButtons;
+                        status.innerText = "¡Listo! Puedes editar el nombre antes de bajar.";
+                    } else {
+                        status.innerText = "No se encontraron enlaces.";
+                    }
                 }
 
             } catch (err) {
-                status.innerText = "Error al conectar con la API.";
+                status.innerText = "Error de conexión.";
                 console.error(err);
             }
         }
