@@ -56,71 +56,95 @@
         <div id="results"></div>
     </div>
 
-    <script>
-        async function obtenerVideo() {
-            const urlInput = document.getElementById('videoUrl').value.trim();
-            const status = document.getElementById('status');
-            const customNameArea = document.getElementById('customNameArea');
-            const customFileNameInput = document.getElementById('customFileName');
-            const thumb = document.getElementById('thumb');
-            const results = document.getElementById('results');
+   <script>
+    async function obtenerVideo() {
+        const urlInput = document.getElementById('videoUrl').value.trim();
+        const status = document.getElementById('status');
+        const customNameArea = document.getElementById('customNameArea');
+        const customFileNameInput = document.getElementById('customFileName');
+        const thumb = document.getElementById('thumb');
+        const results = document.getElementById('results');
 
-            if(!urlInput) return alert("Pega una URL válida");
+        if(!urlInput) return alert("Pega una URL válida");
 
-            status.innerText = "Consultando con la API...";
-            results.innerHTML = "";
-            thumb.style.display = "none";
-            customNameArea.style.display = "none";
+        status.innerText = "Consultando con la API...";
+        results.innerHTML = "";
+        thumb.style.display = "none";
+        customNameArea.style.display = "none";
 
-            try {
-                const response = await fetch(`/api/download?url=${encodeURIComponent(urlInput)}`);
-                const data = await response.json();
+        try {
+            const response = await fetch(`/api/download?url=${encodeURIComponent(urlInput)}`);
+            const data = await response.json();
+            const videoData = Array.isArray(data) ? data[0] : data;
 
-                const videoData = Array.isArray(data) ? data[0] : data;
+            if (videoData) {
+                // 1. Extraer título
+                const rawTitle = videoData.title || (videoData.meta && videoData.meta.title) || "";
+                customFileNameInput.value = rawTitle.substring(0, 50).replace(/[^a-z0-9]/gi, '_');
+                customNameArea.style.display = "block";
 
-                if (videoData) {
-                    // 1. EXTRAER TÍTULO O DESCRIPCIÓN Y PONERLO EN LA CAJA
-                    const rawTitle = videoData.title || (videoData.meta && videoData.meta.title) || "";
-                    customFileNameInput.value = rawTitle.substring(0, 50); // Limitamos a 50 caracteres para que no sea gigante
-                    customNameArea.style.display = "block";
-
-                    // 2. MOSTRAR THUMBNAIL
-                    if (videoData.pictureUrl) {
-                        thumb.src = videoData.pictureUrl;
-                        thumb.style.display = "block";
-                    }
-
-                    // 3. GENERAR BOTONES
-                    if (videoData.urls && Array.isArray(videoData.urls)) {
-                        let htmlButtons = "";
-                        videoData.urls.forEach((item) => {
-                            const label = item.subname ? item.subname.toUpperCase() : "VIDEO";
-                            const claseColor = label.includes("HD") ? "btn-hd" : "btn-sd";
-                            
-                            // Usamos el nombre de la caja para el atributo download
-                            const userFileName = customFileNameInput.value.trim() || "video_fb";
-                            
-                            htmlButtons += `
-                                <a href="${item.url}" 
-                                   download="${userFileName}.mp4" 
-                                   class="dl-btn ${claseColor}" 
-                                   target="_blank" 
-                                   rel="noopener">
-                                    📥 DESCARGAR ${label}
-                                </a>`;
-                        });
-                        results.innerHTML = htmlButtons;
-                        status.innerText = "¡Listo! Puedes editar el nombre antes de bajar.";
-                    } else {
-                        status.innerText = "No se encontraron enlaces.";
-                    }
+                // 2. Mostrar Thumbnail
+                if (videoData.pictureUrl) {
+                    thumb.src = videoData.pictureUrl;
+                    thumb.style.display = "block";
                 }
 
-            } catch (err) {
-                status.innerText = "Error de conexión.";
-                console.error(err);
+                // 3. Generar Botones con función de descarga forzada
+                if (videoData.urls && Array.isArray(videoData.urls)) {
+                    let htmlButtons = "";
+                    videoData.urls.forEach((item) => {
+                        const label = item.subname ? item.subname.toUpperCase() : "VIDEO";
+                        const claseColor = label.includes("HD") ? "btn-hd" : "btn-sd";
+                        
+                        // En lugar de un link directo, llamamos a nuestra función especial
+                        htmlButtons += `
+                            <button onclick="descargarForzado('${item.url}', '${label}')" 
+                                    class="dl-btn ${claseColor}" 
+                                    style="width:100%; border:none; cursor:pointer;">
+                                📥 DESCARGAR ${label}
+                            </button>`;
+                    });
+                    results.innerHTML = htmlButtons;
+                    status.innerText = "¡Listo! Puedes editar el nombre antes de bajar.";
+                }
             }
+        } catch (err) {
+            status.innerText = "Error de conexión.";
         }
-    </script>
+    }
+
+    // FUNCIÓN MÁGICA PARA FORZAR EL NOMBRE DEL ARCHIVO
+    async function descargarForzado(videoUrl, calidad) {
+        const status = document.getElementById('status');
+        const customName = document.getElementById('customFileName').value.trim() || "video_fb";
+        const nombreFinal = `${customName}_${calidad}.mp4`;
+
+        status.innerText = "Iniciando descarga... espera un momento.";
+
+        try {
+            // Esto descarga el video en la memoria del navegador primero
+            const resp = await fetch(videoUrl);
+            const blob = await resp.blob();
+            
+            // Crea un link invisible con el nombre personalizado
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = nombreFinal;
+            
+            document.body.appendChild(a);
+            a.click(); // Simula el clic
+            
+            // Limpieza
+            window.URL.revokeObjectURL(url);
+            status.innerText = "¡Descarga completada!";
+        } catch (error) {
+            status.innerText = "Error al forzar nombre. Se abrirá el link original.";
+            window.open(videoUrl, '_blank');
+        }
+    }
+</script>
 </body>
 </html>
+
