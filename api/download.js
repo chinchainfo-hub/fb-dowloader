@@ -1,3 +1,7 @@
+res.setHeader('Access-Control-Allow-Origin', '*'); // Esto permite que Blogger se conecte
+res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+res.status(200).json(data);
+
 export default async function handler(req, res) {
     const videoUrl = req.query.url;
     if (!videoUrl) return res.status(400).json({ error: 'URL requerida' });
